@@ -132,24 +132,7 @@ export default function App() {
             <h1>Market overview</h1>
             <p>Independent charts and explainable market research</p>
           </div>
-          <button className="refresh" onClick={() => void refresh()}>
-            <RefreshCw className={busy ? 'spin' : ''} /> Refresh scanner
-          </button>
         </header>
-
-        <div className="warning">
-          <ShieldCheck />
-          Market chart uses a separate delayed-data provider when configured. The scanner below is still synthetic demo data and must not be used for trading decisions.
-        </div>
-        {error && <div className="error">{error}</div>}
-
-        <div className="indexGrid">
-          {['NIFTY 50', 'SENSEX', 'BANK NIFTY'].map((item) => (
-            <div className="indexCard" key={item}>
-              <span>{item}</span><b>—</b><small>Index feed not connected</small>
-            </div>
-          ))}
-        </div>
 
         <LiveMarketSection />
 
