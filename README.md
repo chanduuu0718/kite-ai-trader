@@ -1,15 +1,16 @@
 # KITE AI TRADER
 
-AI-assisted Indian-market intraday research and paper-trading platform.
+AI-assisted Indian-market research dashboard with a manually operated workflow.
 
-> **Safety:** This milestone is research and paper-trading only. It does not place live orders or connect to a broker. Demo prices are synthetic and must not be used for real trading decisions.
+> **Important:** The chart integration uses provider-delayed data when configured. The scanner and paper ledger in this MVP still use synthetic demo data. Do not use synthetic or delayed quotes for live trade execution. No live order-placement integration is included.
 
 ## Stack
 - Backend: Python 3.11+ and FastAPI
 - Frontend: React, TypeScript, Vite
-- Initial universe: configurable NSE cash-market watchlist
-- Signals: EMA trend, RSI, VWAP, volume confirmation (educational heuristics)
-- Execution: simulated paper ledger only
+- Charts: TradingView Lightweight Charts (open-source chart library)
+- Optional delayed data: Indian API free tier
+- Indicators: RSI, EMA, VWAP and volume-ratio research heuristics
+- Execution: in-memory simulated paper ledger only
 
 ## Quick start (Windows)
 
@@ -19,9 +20,9 @@ cd backend
 py -m venv .venv
 .venv\Scripts\activate
 python -m pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+Copy-Item .env.example .env
+python -m uvicorn app.main:app --reload --port 8000
 ```
-API docs: http://localhost:8000/docs
 
 Frontend (new terminal):
 ```powershell
@@ -29,20 +30,39 @@ cd frontend
 npm install
 npm run dev
 ```
-Open the Vite URL, normally http://localhost:5173.
 
-Copy `backend/.env.example` to `backend/.env` if changing settings. Never commit keys, tokens, or .env files.
+Open http://localhost:5173. API docs: http://localhost:8000/docs.
 
-## Current milestone
-- Health, market overview, and watchlist endpoints
-- Deterministic synthetic demo candles
-- RSI, EMA, VWAP, volume-ratio indicators
-- Rule-based BUY/SELL/WAIT research signals
-- In-memory simulated paper trades
-- React dashboard for signals and paper positions
+## Configure the optional free delayed NSE chart
 
-## Planned
-Real broker market-data adapters, persistent storage, news ingestion, ML forecasting, event-driven backtesting, and broker order execution. Each requires separate validation and safety controls. Broker integration will remain disabled by default and follow applicable broker/exchange requirements.
+The chart adapter uses Indian API's documented delayed 1-day intraday endpoint. The endpoint returns price observations at 5-minute intervals during the session; it is a price line, not full OHLC candles. The provider does not publish an exact latency guarantee, so the UI displays the provider timestamp and calls the feed delayed rather than claiming a guaranteed 15-minute delay.
+
+1. Create a free developer API key at https://indianapi.in/indian-stock-market. This is a data-provider account, **not a broker account**. The provider's free tier requires an API key.
+2. Open backend/.env and set:
+   ```dotenv
+   INDIAN_API_KEY=your_private_key
+   INDIAN_API_BASE_URL=https://stock.indianapi.in
+   ```
+3. Restart the backend. The chart checks the provider once per minute and caches a symbol response for 60 seconds to reduce API usage.
+
+Never paste the API key into chat or commit backend/.env to GitHub. The frontend never receives the key.
+
+If the key is not configured, the dashboard displays setup instructions instead of substituting fake chart prices.
+
+## API endpoints
+- GET /health — backend status
+- GET /api/data/status — optional data-provider configuration status
+- GET /api/market/{symbol}/intraday — provider-delayed 5-minute price observations
+- GET /api/analysis/signals — **synthetic demo signals only**
+- GET /api/paper/trades — simulated trades
+
+## Current limitations
+- Indian API's free developer plan and endpoint availability/quotas are controlled by that provider and may change.
+- The delayed intraday endpoint documents price observations, not OHLCV candles. KITE does not invent open, high, low or volume values.
+- The existing scanner still uses synthetic candles. Its BUY/SELL/WAIT output is explicitly labelled demo and is not actionable.
+- NIFTY, SENSEX and BANK NIFTY index tiles are placeholders.
+- News analysis, true OHLC candle history, persistent storage, and calibrated signal validation are not implemented yet.
+- No broker connection, account credentials, or live order placement is used.
 
 ## Tests
 ```powershell
