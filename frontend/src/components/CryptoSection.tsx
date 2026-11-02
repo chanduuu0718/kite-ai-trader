@@ -52,7 +52,8 @@ export default function CryptoSection() {
       <button className="refresh" onClick={() => void refresh()}><RefreshCw className={loading ? 'spin' : ''}/> Refresh crypto</button>
     </div>
     {error && <div className="error">{error}</div>}
-    <div className="cryptoLayout">\n    <div className="cryptoCards">
+    <div className="cryptoLayout">
+    <div className="cryptoCards">
       {coins.map(coin => <article className="cryptoCard" key={coin.id}>
         <div className="coinIdentity"><span className={'coinIcon ' + coin.symbol.toLowerCase()}><Bitcoin/></span><div><b>{coin.name}</b><small>{coin.symbol} · INR</small></div></div>
         <strong>₹{coin.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
@@ -61,7 +62,14 @@ export default function CryptoSection() {
       </article>)}
       {!coins.length && !error && <div className="empty">Loading BTC and ETH market data…</div>}
     </div>
-    <aside className="cryptoAlertBox">\n      <div className="alertBoxHead"><span className="alertPulse"/> <div><b>Crypto alerts</b><small>Updates detected by KITE</small></div><span className="liveTag">AUTO</span></div>\n      {alerts.map((alert, i) => <div className="cryptoAlert" key={alert + i}><span>●</span>{alert}</div>)}\n      {!alerts.length && <p className="alertEmpty">No notable price moves or new headlines detected yet. Alerts appear after refresh.</p>}\n      <button className="clearAlerts" onClick={() => setAlerts([])}>Clear alerts</button>\n    </aside>\n    </div>\n    <div className="cryptoNews">
+    <aside className="cryptoAlertBox">
+      <div className="alertBoxHead"><span className="alertPulse"/> <div><b>Crypto alerts</b><small>Updates detected by KITE</small></div><span className="liveTag">AUTO</span></div>
+      {alerts.map((alert, i) => <div className="cryptoAlert" key={alert + i}><span>●</span>{alert}</div>)}
+      {!alerts.length && <p className="alertEmpty">No notable price moves or new headlines detected yet. Alerts appear after refresh.</p>}
+      <button className="clearAlerts" onClick={() => setAlerts([])}>Clear alerts</button>
+    </aside>
+    </div>
+    <div className="cryptoNews">
       <div className="sectionHead"><div><h2><Newspaper/> Crypto news & context</h2><p>Latest headlines with source links; use news as context, not a trade signal by itself.</p></div><span className="liveTag">COINDESK RSS</span></div>
       {news.map((item, i) => <a className="cryptoNewsItem" href={item.link} target="_blank" rel="noreferrer" key={item.link}>
         <span className="newsNumber">{String(i + 1).padStart(2, '0')}</span><div><b>{item.title}</b><small>{item.source} · {item.published}</small></div><ExternalLink/>
