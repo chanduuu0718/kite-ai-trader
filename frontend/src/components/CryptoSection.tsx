@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bitcoin, RefreshCw, ExternalLink, Newspaper } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-type Coin = { id: string; symbol: string; name: string; price: number; change: number };
+type Coin = { id: string; symbol: string; name: string; price: number; change_24h: number; market_cap: number; volume_24h: number; high_24h: number; low_24h: number; last_updated: string };
 type News = { title: string; link: string; published: string; source: string };
 
 export default function CryptoSection() {
@@ -15,15 +15,12 @@ export default function CryptoSection() {
     setLoading(true); setError('');
     try {
       const [priceResponse, newsResponse] = await Promise.all([
-        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=inr&include_24hr_change=true'),
+        fetch(API + '/api/crypto/market'),
         fetch(API + '/api/crypto/news'),
       ]);
       if (!priceResponse.ok) throw new Error('CoinGecko price feed unavailable');
-      const prices = await priceResponse.json();
-      setCoins([
-        { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', price: prices.bitcoin.inr, change: prices.bitcoin.inr_24h_change },
-        { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', price: prices.ethereum.inr, change: prices.ethereum.inr_24h_change },
-      ]);
+      const market = await priceResponse.json();
+      setCoins(market);
       if (newsResponse.ok) setNews(await newsResponse.json());
       else setNews([]);
     } catch (e) { setError(e instanceof Error ? e.message : 'Crypto data unavailable'); }
@@ -41,8 +38,8 @@ export default function CryptoSection() {
       {coins.map(coin => <article className="cryptoCard" key={coin.id}>
         <div className="coinIdentity"><span className={'coinIcon ' + coin.symbol.toLowerCase()}><Bitcoin/></span><div><b>{coin.name}</b><small>{coin.symbol} · INR</small></div></div>
         <strong>₹{coin.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
-        <span className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}% <small>24h</small></span>
-        <p>Market price from CoinGecko. Crypto trades 24/7; values refresh about every minute.</p>
+        <span className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change_24h >= 0 ? '+' : ''}{coin.change_24h.toFixed(2)}% <small>24h</small></span>
+        <div className="coinStats"><span>24h High <b>₹{coin.high_24h.toLocaleString('en-IN',{maximumFractionDigits:2})}</b></span><span>24h Low <b>₹{coin.low_24h.toLocaleString('en-IN',{maximumFractionDigits:2})}</b></span><span>24h Volume <b>₹{(coin.volume_24h/1e7).toFixed(2)} Cr</b></span><span>Market Cap <b>₹{(coin.market_cap/1e7).toFixed(0)} Cr</b></span></div><small className="coinUpdated">Provider updated: {coin.last_updated ? new Date(coin.last_updated).toLocaleTimeString('en-IN') : '—'}</small>
       </article>)}
       {!coins.length && !error && <div className="empty">Loading BTC and ETH market data…</div>}
     </div>
