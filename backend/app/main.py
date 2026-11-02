@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+import xml.etree.ElementTree as ET
+
+import httpx
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,6 +59,27 @@ def overview():
 @app.get("/api/market/watchlist")
 def watchlist():
     return WATCHLIST
+
+
+@app.get("/api/crypto/news")
+async def crypto_news():
+    """Latest CoinDesk RSS headlines for the crypto research panel."""
+    feed_url = "https://www.coindesk.com/arc/outboundfeeds/rss/"
+    try:
+        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+            response = await client.get(feed_url, headers={"User-Agent": "KITE-AI-Trader/0.1"})
+            response.raise_for_status()
+        root = ET.fromstring(response.text)
+        items = []
+        for item in root.findall(".//item")[:12]:
+            title = item.findtext("title", default="").strip()
+            link = item.findtext("link", default="").strip()
+            published = item.findtext("pubDate", default="").strip()
+            if title and link:
+                items.append({"title": title, "link": link, "published": published, "source": "CoinDesk"})
+        return items
+    except (httpx.HTTPError, ET.ParseError) as exc:
+        raise HTTPException(status_code=502, detail="Crypto news feed is temporarily unavailable.") from exc
 
 
 @app.get("/api/market/{symbol}/history")
