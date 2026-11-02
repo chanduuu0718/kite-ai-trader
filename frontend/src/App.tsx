@@ -12,6 +12,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import MarketChart from './components/MarketChart';
+import CryptoSection from './components/CryptoSection';
 
 const DEFAULT_SYMBOLS = [
   'RELIANCE', 'HDFCBANK', 'ICICIBANK', 'INFY', 'TCS', 'SBIN',
@@ -115,6 +116,7 @@ export default function App() {
         </div>
         <div className="nav active"><Activity /> Market overview</div>
         <div className="nav"><BrainCircuit /> AI signals</div>
+        <div className="nav"><CircleDollarSign /> Crypto (BTC / ETH)</div>
         <div className="nav"><Wallet /> Paper portfolio</div>
         <div className="nav"><ShieldCheck /> Risk controls</div>
         <div className="sideNote">
