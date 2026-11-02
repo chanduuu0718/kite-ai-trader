@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     indian_api_key: str = ""
     indian_api_base_url: str = "https://stock.indianapi.in"
-    indian_api_symbols_url: str = "https://dev.indianapi.in/static/all_stocks.json"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
