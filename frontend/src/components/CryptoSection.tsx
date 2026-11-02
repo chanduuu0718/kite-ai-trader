@@ -38,7 +38,7 @@ export default function CryptoSection() {
       {coins.map(coin => <article className="cryptoCard" key={coin.id}>
         <div className="coinIdentity"><span className={'coinIcon ' + coin.symbol.toLowerCase()}><Bitcoin/></span><div><b>{coin.name}</b><small>{coin.symbol} · INR</small></div></div>
         <strong>₹{coin.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
-        <span className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change_24h >= 0 ? '+' : ''}{coin.change_24h.toFixed(2)}% <small>24h</small></span>
+        <span className={coin.change_24h >= 0 ? 'positive' : 'negative'}>{coin.change_24h >= 0 ? '+' : ''}{coin.change_24h.toFixed(2)}% <small>24h</small></span>
         <div className="coinStats"><span>24h High <b>₹{coin.high_24h.toLocaleString('en-IN',{maximumFractionDigits:2})}</b></span><span>24h Low <b>₹{coin.low_24h.toLocaleString('en-IN',{maximumFractionDigits:2})}</b></span><span>24h Volume <b>₹{(coin.volume_24h/1e7).toFixed(2)} Cr</b></span><span>Market Cap <b>₹{(coin.market_cap/1e7).toFixed(0)} Cr</b></span></div><small className="coinUpdated">Provider updated: {coin.last_updated ? new Date(coin.last_updated).toLocaleTimeString('en-IN') : '—'}</small>
       </article>)}
       {!coins.length && !error && <div className="empty">Loading BTC and ETH market data…</div>}
