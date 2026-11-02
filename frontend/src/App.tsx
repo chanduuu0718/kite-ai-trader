@@ -244,6 +244,8 @@ export default function App() {
           </div>
         </div>
 
+        <CryptoSection />
+
         <div className="sectionHead">
           <div><h2>Recent paper trades</h2><p>In-memory demo ledger resets when backend restarts.</p></div>
         </div>
