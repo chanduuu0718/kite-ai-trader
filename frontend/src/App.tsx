@@ -52,6 +52,8 @@ export default function App() {
   const [selected, setSelected] = useState('RELIANCE');
   const [qty, setQty] = useState(1);
   const [side, setSide] = useState('BUY');
+  const [activeNav, setActiveNav] = useState('market');
+  function navigate(target: string) { setActiveNav(target); document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
   async function refresh() {
     setBusy(true);
@@ -114,11 +116,11 @@ export default function App() {
           <div className="brandIcon"><CandlestickChart /></div>
           <div><b>KITE AI</b><small>TRADER TERMINAL</small></div>
         </div>
-        <div className="nav active"><Activity /> Market overview</div>
-        <div className="nav"><BrainCircuit /> AI signals</div>
-        <div className="nav"><CircleDollarSign /> Crypto (BTC / ETH)</div>
-        <div className="nav"><Wallet /> Paper portfolio</div>
-        <div className="nav"><ShieldCheck /> Risk controls</div>
+        <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> Market overview</button>
+        <button className={'nav '+(activeNav==='signals'?'active':'')} onClick={()=>navigate('signals')}><BrainCircuit /> AI signals</button>
+        <button className={'nav '+(activeNav==='crypto'?'active':'')} onClick={()=>navigate('crypto')}><CircleDollarSign /> Crypto (BTC / ETH)</button>
+        <button className={'nav '+(activeNav==='portfolio'?'active':'')} onClick={()=>navigate('portfolio')}><Wallet /> Paper portfolio</button>
+        <button className={'nav '+(activeNav==='risk'?'active':'')} onClick={()=>navigate('risk')}><ShieldCheck /> Risk controls</button>
         <div className="sideNote">
           <span className="pulse" /> READ-ONLY RESEARCH
           <small>Delayed chart data · Manual trading only</small>
@@ -134,11 +136,12 @@ export default function App() {
           </div>
         </header>
 
-        <LiveMarketSection />
+        <div id="market"><LiveMarketSection /></div>
+        <div id="signals" className="panel navPlaceholder"><h2>AI signals</h2><p>Real technical BUY/SELL analysis is not active until verified intraday candles are available.</p></div>
 
-        <CryptoSection />
+        <div id="crypto"><CryptoSection /></div>
 
-        <div className="sectionHead">
+        <div id="portfolio"><div className="sectionHead">
           <div><h2>Recent paper trades</h2><p>In-memory demo ledger resets when backend restarts.</p></div>
         </div>
         <div className="tradeList">
@@ -152,6 +155,8 @@ export default function App() {
           ))}
           {!trades.length && <div className="empty">No simulated trades yet.</div>}
         </div>
+        </div>
+        <div id="risk" className="panel navPlaceholder"><h2>Risk controls</h2><p>Read-only research only. No broker orders are sent by KITE.</p></div>
         <footer>KITE AI TRADER · MVP 0.2.0 <span>Research software · Not investment advice</span></footer>
       </section>
     </main>
