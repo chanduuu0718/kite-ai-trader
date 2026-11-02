@@ -61,6 +61,29 @@ def watchlist():
     return WATCHLIST
 
 
+@app.get("/api/crypto/market")
+async def crypto_market():
+    """Aggregated BTC/ETH INR market snapshots from CoinGecko (cached by provider)."""
+    url = "https://api.coingecko.com/api/v3/coins/markets"
+    params = {"vs_currency": "inr", "ids": "bitcoin,ethereum", "price_change_percentage": "24h"}
+    try:
+        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+            response = await client.get(url, params=params, headers={"User-Agent": "KITE-AI-Trader/0.1"})
+            response.raise_for_status()
+        payload = response.json()
+        return [
+            {
+                "id": coin["id"], "symbol": coin["symbol"].upper(), "name": coin["name"],
+                "price": coin.get("current_price"), "change_24h": coin.get("price_change_percentage_24h"),
+                "market_cap": coin.get("market_cap"), "volume_24h": coin.get("total_volume"),
+                "high_24h": coin.get("high_24h"), "low_24h": coin.get("low_24h"),
+                "last_updated": coin.get("last_updated"),
+            } for coin in payload
+        ]
+    except (httpx.HTTPError, ValueError, KeyError) as exc:
+        raise HTTPException(status_code=502, detail="CoinGecko crypto market feed is temporarily unavailable.") from exc
+
+
 @app.get("/api/crypto/news")
 async def crypto_news():
     """Latest CoinDesk RSS headlines for the crypto research panel."""
