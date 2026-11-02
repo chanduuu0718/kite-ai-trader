@@ -50,8 +50,8 @@ export default function MarketChart({ symbol, onSymbolChange, symbols }: Props) 
     const chart = createChart(containerRef.current, {
       autoSize: true,
       height: 340,
-      attributionLogo: true,
       layout: {
+        attributionLogo: true,
         background: { type: ColorType.Solid, color: '#101827' },
         textColor: '#94a3b8',
         fontFamily: 'DM Mono, monospace',
@@ -90,6 +90,7 @@ export default function MarketChart({ symbol, onSymbolChange, symbols }: Props) 
     const load = async () => {
       setLoading(true);
       setError('');
+      setChartData(null);
       try {
         const statusResponse = await fetch(API + '/api/data/status');
         if (!statusResponse.ok) throw new Error('Could not read the data-provider status.');
