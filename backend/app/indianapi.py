@@ -83,7 +83,7 @@ async def _get_stock_ids() -> dict[str, str]:
     async with _stock_ids_lock:
         if _stock_ids is not None:
             return _stock_ids
-        url = settings.indian_api_base_url.rstrip("/") + "/static/all_stocks.json"
+        url = settings.indian_api_symbols_url
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 response = await client.get(url)
