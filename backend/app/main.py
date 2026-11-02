@@ -1,13 +1,14 @@
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .indianapi import (
     IndianApiError,
     IndianApiNotConfigured,
-    get_intraday_prices,
+    VALID_PERIODS,
+    get_historical_prices,
     provider_status,
 )
 from .indicators import calculate_indicators, generate_signal
@@ -17,8 +18,8 @@ from .schemas import PaperTradeRequest
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.2.0",
-    description="Indian intraday research API. External chart data is provider-delayed; demo signals remain synthetic.",
+    version="0.3.0",
+    description="Indian-market research API. Free-tier chart data is historical daily pricing; demo signals remain synthetic.",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -31,7 +32,7 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    mode = "PROVIDER_DELAYED_CONFIGURED" if settings.indian_api_key.strip() else "DEMO_SYNTHETIC"
+    mode = "HISTORICAL_API_CONFIGURED" if settings.indian_api_key.strip() else "DEMO_SYNTHETIC"
     return {"status": "ok", "mode": mode, "time": datetime.now(timezone.utc)}
 
 
@@ -57,13 +58,18 @@ def watchlist():
     return WATCHLIST
 
 
-@app.get("/api/market/{symbol}/intraday")
-async def intraday_chart(symbol: str):
+@app.get("/api/market/{symbol}/history")
+async def historical_chart(
+    symbol: str,
+    period: str = Query(default="1m", description="Lookback period: 1m means one month, not one minute."),
+):
     normalized = symbol.upper()
     if normalized not in {item["symbol"] for item in WATCHLIST}:
         raise HTTPException(status_code=404, detail="Symbol is not in the KITE watchlist.")
+    if period not in VALID_PERIODS:
+        raise HTTPException(status_code=422, detail=f"Period must be one of: {', '.join(sorted(VALID_PERIODS))}.")
     try:
-        return await get_intraday_prices(normalized)
+        return await get_historical_prices(normalized, period)
     except IndianApiNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except IndianApiError as exc:
