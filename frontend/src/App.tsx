@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
-import MarketChart from './components/MarketChart';
+import LiveMarketSection from './components/LiveMarketSection';
 import CryptoSection from './components/CryptoSection';
 
 const DEFAULT_SYMBOLS = [
@@ -151,7 +151,7 @@ export default function App() {
           ))}
         </div>
 
-        <MarketChart symbol={selected} onSymbolChange={setSelected} symbols={symbols} />
+        <LiveMarketSection />
 
         <div className="statGrid">
           <Stat icon={<ArrowUpRight />} label="Demo BUY setups" value={counts.buy} tone="green" />
