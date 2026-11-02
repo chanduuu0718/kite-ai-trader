@@ -89,10 +89,12 @@ async def _get_stock_ids() -> dict[str, str]:
                 response = await client.get(url)
                 response.raise_for_status()
                 payload = response.json()
-        except (httpx.HTTPError, ValueError) as exc:
-            raise IndianApiError("Could not load the provider's NSE symbol list.") from exc
+        except (httpx.HTTPError, ValueError):
+            # Some free-plan hosts may not expose the static catalogue. The
+            # per-symbol industry-search fallback below handles that case.
+            payload = []
 
-        rows = payload if isinstance(payload, list) else payload.get("stocks", [])
+        rows = payload if isinstance(payload, list) else (payload.get("stocks", []) if isinstance(payload, dict) else [])
         mapping: dict[str, str] = {}
         if isinstance(rows, list):
             for row in rows:
@@ -102,10 +104,36 @@ async def _get_stock_ids() -> dict[str, str]:
                 stock_id = row.get("id") or row.get("stock_id") or row.get("stockId")
                 if symbol and stock_id:
                     mapping[str(symbol).upper()] = str(stock_id)
-        if not mapping:
-            raise IndianApiError("Provider symbol list was empty or in an unexpected format.")
         _stock_ids = mapping
         return mapping
+
+
+async def _lookup_stock_id(symbol: str) -> str | None:
+    """Fallback for providers that do not expose the static symbol catalogue."""
+    url = settings.indian_api_base_url.rstrip("/") + "/industry_search"
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(
+                url,
+                params={"query": symbol},
+                headers={"X-API-Key": settings.indian_api_key},
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError):
+        return None
+
+    rows = payload if isinstance(payload, list) else (payload.get("results", []) if isinstance(payload, dict) else [])
+    if not isinstance(rows, list):
+        return None
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        found_symbol = row.get("nse-code") or row.get("nse_code") or row.get("exchangeCodeNsi")
+        found_id = row.get("id") or row.get("stock_id") or row.get("stockId")
+        if str(found_symbol or "").upper() == symbol.upper() and found_id:
+            return str(found_id)
+    return None
 
 
 async def get_intraday_prices(symbol: str) -> dict[str, Any]:
@@ -123,9 +151,9 @@ async def get_intraday_prices(symbol: str) -> dict[str, Any]:
         return cached[1]
 
     mapping = await _get_stock_ids()
-    stock_id = mapping.get(symbol)
+    stock_id = mapping.get(symbol) or await _lookup_stock_id(symbol)
     if not stock_id:
-        raise IndianApiError("This symbol is not present in the provider's NSE symbol list.")
+        raise IndianApiError("Could not resolve this NSE symbol to a provider stock ID.")
 
     url = settings.indian_api_base_url.rstrip("/") + "/1D_intraday_data"
     try:
