@@ -42,6 +42,7 @@ The chart adapter uses Indian API's documented delayed 1-day intraday endpoint. 
    ```dotenv
    INDIAN_API_KEY=your_private_key
    INDIAN_API_BASE_URL=https://stock.indianapi.in
+   INDIAN_API_SYMBOLS_URL=https://dev.indianapi.in/static/all_stocks.json
    ```
 3. Restart the backend. The chart checks the provider once per minute and caches a symbol response for 60 seconds to reduce API usage.
 
