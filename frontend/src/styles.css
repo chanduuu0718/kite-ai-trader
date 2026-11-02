@@ -12,3 +12,11 @@
 @media(max-width:650px){.cryptoHeading{align-items:flex-start;flex-direction:column}.cryptoCards{grid-template-columns:1fr}.cryptoSection{padding:14px}}
 
 .coinStats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:2px}.coinStats span{font-size:9px;color:#7d8ca4}.coinStats b{display:block;color:#cbd8e9;font:10px 'DM Mono';margin-top:4px}.coinUpdated{font:9px 'DM Mono';color:#71849e;margin-top:3px}
+
+.cryptoLayout{display:grid;grid-template-columns:minmax(0,2fr) minmax(230px,1fr);gap:14px;align-items:start}
+.cryptoAlertBox{border:1px solid #2a3a52;border-radius:10px;background:#0a1422;padding:14px;min-height:190px;position:sticky;top:16px}
+.alertBoxHead{display:flex;align-items:center;gap:9px;padding-bottom:12px;border-bottom:1px solid #223149}.alertBoxHead>div{flex:1}.alertBoxHead b,.alertBoxHead small{display:block}.alertBoxHead b{font-size:12px}.alertBoxHead small{font-size:9px;color:#8192aa;margin-top:3px}
+.alertPulse{width:8px;height:8px;border-radius:50%;background:#46d7a6;box-shadow:0 0 0 4px #17372f}
+.cryptoAlert{display:flex;gap:8px;padding:11px 0;border-bottom:1px solid #1b2a3e;font-size:10px;line-height:1.5;color:#c8d5e6}.cryptoAlert>span{color:#59d9b6}.alertEmpty{color:#7488a2;font-size:10px;line-height:1.6;margin:13px 0}.clearAlerts{margin-top:12px;background:transparent;border:1px solid #2b3c55;border-radius:6px;padding:6px 9px;color:#91a1b8;font-size:9px;cursor:pointer}
+.coinStats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0;border-top:1px solid #1c2b40;border-bottom:1px solid #1c2b40}.coinStats span{font-size:9px;color:#7f90a9}.coinStats b{display:block;color:#cbd8e9;font:10px 'DM Mono';margin-top:5px}.coinUpdated{font-size:9px;color:#70829b}
+@media(max-width:800px){.cryptoLayout{grid-template-columns:1fr}.cryptoAlertBox{position:static}}
