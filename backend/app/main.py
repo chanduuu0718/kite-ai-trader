@@ -56,6 +56,34 @@ def overview():
     }
 
 
+
+
+@app.get("/api/market/live")
+async def live_market():
+    """Delayed live NSE batch quote snapshot (requires Indian API developer key)."""
+    if not settings.indian_api_key.strip():
+        raise HTTPException(status_code=503, detail="Configure INDIAN_API_KEY in backend/.env for real delayed NSE quotes.")
+    symbols = [item["symbol"] for item in WATCHLIST]
+    url = settings.indian_api_base_url.rstrip("/") + "/nse_stock_batch_live_price"
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(url, json={"stock_symbols": symbols}, headers={"X-API-Key": settings.indian_api_key})
+            response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, dict):
+            payload = payload.get("data", payload.get("stocks", payload.get("results", [])))
+        if isinstance(payload, dict):
+            payload = [dict(value, symbol=key) if isinstance(value, dict) else {"symbol": key, "ltp": value} for key, value in payload.items()]
+        if not isinstance(payload, list):
+            raise ValueError("Unexpected quote response")
+        return {"source":"Indian API delayed live quotes", "data_mode":"DELAYED_LIVE", "fetched_at":datetime.now(timezone.utc), "quotes":payload}
+    except httpx.HTTPStatusError as exc:
+        code=exc.response.status_code
+        message="Indian API rejected the key." if code in (401,403) else "Indian API quota reached." if code==429 else "Indian API quote request failed."
+        raise HTTPException(status_code=502, detail=message) from exc
+    except (httpx.HTTPError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="Live quote provider unavailable or returned an unexpected response.") from exc
+
 @app.get("/api/market/watchlist")
 def watchlist():
     return WATCHLIST
