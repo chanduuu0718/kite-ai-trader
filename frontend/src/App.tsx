@@ -1,7 +1,165 @@
-import {useEffect,useState} from 'react'; import {Activity,BrainCircuit,ShieldCheck,RefreshCw,IndianRupee,TrendingUp,TrendingDown} from 'lucide-react';
-type Stock={symbol:string;name:string;price:number;change_pct:number;volume:number;score:number;signal:string;reason:string};
-const API='http://localhost:8000';
-export default function App(){const [stocks,setStocks]=useState<Stock[]>([]);const [health,setHealth]=useState('connecting');const [orders,setOrders]=useState<any[]>([]);
-async function load(){try{const [s,h,o]=await Promise.all([fetch(API+'/api/scanner').then(r=>r.json()),fetch(API+'/api/health').then(r=>r.json()),fetch(API+'/api/paper/orders').then(r=>r.json())]);setStocks(s.results);setHealth(h.data);setOrders(o)}catch{setHealth('API offline')}}
-useEffect(()=>{load();const t=setInterval(load,10000);return()=>clearInterval(t)},[]);
-return <div className="shell"><aside><div className="brand"><div className="logo">K</div><div>KITE <span>AI TRADER</span></div></div><nav><a className="active"><Activity size={17}/> Overview</a><a><TrendingUp size={17}/> Market Scanner</a><a><BrainCircuit size={17}/> AI Engine</a><a><ShieldCheck size={17}/> Risk & Paper</a></nav><div className="side-note">INDIA · NSE<br/><small>Research terminal</small></div></aside><main><header><div><div className="eyebrow">TRADING WORKSPACE / INDIA</div><h1>Market Intelligence</h1><p>Intraday research · Signal monitor · Paper portfolio</p></div><button onClick={load}><RefreshCw size={15}/> Refresh</button></header><div className="notice"><ShieldCheck size={18}/> <b>SIMULATION MODE</b> — mock prices and demo scores only. No live orders.</div><section className="stats"><div className="stat"><span>Data feed</span><b className="green">{health.toUpperCase()}</b><small>Local development</small></div><div className="stat"><span>Universe</span><b>{stocks.length} <small>stocks</small></b><small>Demo watchlist</small></div><div className="stat"><span>Paper orders</span><b>{orders.length}</b><small>Simulated only</small></div><div className="stat"><span>Engine</span><b>RULES v0.1</b><small>AI models not trained</small></div></section><section className="panel"><div className="panel-head"><div><h2>Intraday Scanner</h2><p>Illustrative ranking · not a buy/sell recommendation</p></div><span className="pill">DEMO</span></div><div className="table-wrap"><table><thead><tr><th>Instrument</th><th>Last (₹)</th><th>Change</th><th>Score</th><th>Signal</th></tr></thead><tbody>{stocks.map(s=><tr key={s.symbol}><td><b>{s.symbol}</b><small>{s.name}</small></td><td>₹{s.price.toLocaleString('en-IN')}</td><td className={s.change_pct>=0?'green':'red'}>{s.change_pct>0?'+':''}{s.change_pct}%</td><td><div className="score"><span style={{width:s.score+'%'}}/></div>{s.score}</td><td><span className={'signal '+(s.score>65?'bull':s.score<35?'bear':'neutral')}>{s.signal}</span></td></tr>)}</tbody></table></div></section><section className="panel"><div className="panel-head"><div><h2>Paper portfolio</h2><p>Order simulation endpoint available at /api/paper/orders</p></div><IndianRupee/></div>{orders.length?orders.map(o=><div className="order" key={o.id}>{o.side} {o.quantity} {o.symbol} @ ₹{o.price} <span>{o.status}</span></div>):<div className="empty">No simulated orders yet. Live execution is intentionally disabled.</div>}</section><footer>KITE AI TRADER · MVP 0.1.0 <span>Educational software · No financial advice</span></footer></main></div>}
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  BrainCircuit,
+  CandlestickChart,
+  CircleDollarSign,
+  Gauge,
+  RefreshCw,
+  ShieldCheck,
+  Wallet,
+} from 'lucide-react';
+import LiveMarketSection from './components/LiveMarketSection';
+import CryptoSection from './components/CryptoSection';
+import MarketNews from './components/MarketNews';
+
+const DEFAULT_SYMBOLS = [
+  'RELIANCE', 'HDFCBANK', 'ICICIBANK', 'INFY', 'TCS', 'SBIN',
+  'BHARTIARTL', 'LT', 'ITC', 'AXISBANK', 'TATAMOTORS', 'MARUTI',
+];
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+type Row = {
+  symbol: string;
+  name: string;
+  ltp: number;
+  change_pct: number;
+  rsi: number;
+  ema_fast: number;
+  ema_slow: number;
+  vwap: number;
+  volume_ratio: number;
+  action: string;
+  score: number;
+  rationale: string[];
+};
+type Trade = {
+  id: string;
+  symbol: string;
+  side: string;
+  quantity: number;
+  entry_price: number;
+  status: string;
+  created_at: string;
+};
+
+export default function App() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [selected, setSelected] = useState('RELIANCE');
+  const [qty, setQty] = useState(1);
+  const [side, setSide] = useState('BUY');
+  const [activeNav, setActiveNav] = useState('market');
+  function navigate(target: string) { setActiveNav(target); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  async function refresh() {
+    setBusy(true);
+    setError('');
+    try {
+      const [signalsResponse, tradesResponse] = await Promise.all([
+        fetch(API + '/api/analysis/signals'),
+        fetch(API + '/api/paper/trades'),
+      ]);
+      if (!signalsResponse.ok || !tradesResponse.ok) {
+        throw new Error('API failed. Is the backend running on port 8000?');
+      }
+      setRows(await signalsResponse.json());
+      setTrades(await tradesResponse.json());
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Could not connect');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    void refresh();
+    const id = window.setInterval(() => void refresh(), 15_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const counts = useMemo(() => ({
+    buy: rows.filter((row) => row.action === 'BUY').length,
+    sell: rows.filter((row) => row.action === 'SELL').length,
+    wait: rows.filter((row) => row.action === 'WAIT').length,
+  }), [rows]);
+
+  const symbols = rows.length ? rows.map((row) => row.symbol) : DEFAULT_SYMBOLS;
+
+  async function paper() {
+    const row = rows.find((item) => item.symbol === selected);
+    if (!row) return;
+    const response = await fetch(API + '/api/paper/trades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol: selected,
+        side,
+        quantity: qty,
+        reference_price: row.ltp,
+      }),
+    });
+    if (!response.ok) {
+      setError('Paper trade failed');
+      return;
+    }
+    await refresh();
+  }
+
+  return (
+    <main className="shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brandIcon"><CandlestickChart /></div>
+          <div><b>KITE AI</b><small>TRADER TERMINAL</small></div>
+        </div>
+        <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> India Market</button>
+        <button className={'nav '+(activeNav==='news'?'active':'')} onClick={()=>navigate('news')}><Activity /> Market News</button>
+        <button className={'nav '+(activeNav==='signals'?'active':'')} onClick={()=>navigate('signals')}><BrainCircuit /> AI Signals</button>
+        <button className={'nav '+(activeNav==='crypto'?'active':'')} onClick={()=>navigate('crypto')}><CircleDollarSign /> Crypto (BTC / ETH)</button>
+        <button className={'nav '+(activeNav==='portfolio'?'active':'')} onClick={()=>navigate('portfolio')}><Wallet /> Paper Portfolio</button>
+        <button className={'nav '+(activeNav==='risk'?'active':'')} onClick={()=>navigate('risk')}><ShieldCheck /> Risk Controls</button>
+        <div className="sideNote">
+          <span className="pulse" /> READ-ONLY RESEARCH
+          <small>Delayed chart data · Manual trading only</small>
+        </div>
+      </aside>
+
+      <section className="content">
+        <header>
+          <div>
+            <div className="eyebrow">INDIAN EQUITY MARKETS / INTRADAY</div>
+            <h1>{activeNav === 'market' ? 'Indian Market Dashboard' : activeNav === 'crypto' ? 'Crypto Dashboard' : activeNav === 'news' ? 'NSE / BSE Market News' : activeNav === 'signals' ? 'AI Signals' : activeNav === 'portfolio' ? 'Paper Portfolio' : 'Risk Controls'}</h1>
+            <p>Current price cards · Market information · Manual research</p>
+          </div>
+        </header>
+
+        {activeNav === 'market' && <><div className="marketIntro"><div className="eyebrow">NSE / BSE · INDIA</div><h2>Indian market dashboard</h2><p>Stocks and delayed quote cards. No charts unless an AI setup is triggered.</p><div className="marketQuick"><span>NSE · National Stock Exchange</span><span>BSE · Bombay Stock Exchange</span><span>Cash market · Intraday research</span></div><LiveMarketSection /></>}
+        {activeNav === 'news' && <MarketNews />}
+        {activeNav === 'signals' && <section className="pagePanel"><div className="eyebrow">KITE INTELLIGENCE</div><h2>AI signals</h2><p>Signals will appear here after verified intraday candle data and technical strategy are connected. No demo BUY/SELL advice is shown.</p><div className="empty">No verified signal available.</div></section>}
+        {activeNav === 'crypto' && <CryptoSection />}
+        {activeNav === 'portfolio' && <section className="pagePanel"><div className="sectionHead"><div><h2>Paper portfolio</h2><p>Simulated trades only · resets on backend restart</p></div></div><div className="tradeList">{trades.slice(0,5).map(trade=><div className="trade" key={trade.id}><b>{trade.symbol}</b><span>{trade.side} · {trade.quantity} qty</span><span>₹{trade.entry_price.toFixed(2)}</span><em>SIMULATED</em></div>)}{!trades.length&&<div className="empty">No simulated trades yet.</div>}</div></section>}
+        {activeNav === 'risk' && <section className="pagePanel"><div className="eyebrow">SAFETY</div><h2>Risk controls</h2><p>KITE is read-only research. No broker orders are sent.</p><ul><li>Use a predefined stop-loss for every trade.</li><li>Limit risk per trade and daily loss.</li><li>Confirm all signals manually; data may be delayed.</li></ul></section>}
+        <footer>KITE AI TRADER · MVP 0.2.0 <span>Research software · Not investment advice</span></footer>
+      </section>
+    </main>
+  );
+}
+
+function Stat({ icon, label, value, tone }: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  tone: string;
+}) {
+  return (
+    <div className="stat">
+      <div className={'statIcon ' + tone}>{icon}</div>
+      <div><small>{label}</small><b>{value}</b></div>
+    </div>
+  );
+}
