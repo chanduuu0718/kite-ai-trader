@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import LiveMarketSection from './components/LiveMarketSection';
 import CryptoSection from './components/CryptoSection';
+import MarketNews from './components/MarketNews';
 
 const DEFAULT_SYMBOLS = [
   'RELIANCE', 'HDFCBANK', 'ICICIBANK', 'INFY', 'TCS', 'SBIN',
@@ -117,6 +118,7 @@ export default function App() {
           <div><b>KITE AI</b><small>TRADER TERMINAL</small></div>
         </div>
         <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> India Market</button>
+        <button className={'nav '+(activeNav==='news'?'active':'')} onClick={()=>navigate('news')}><Activity /> Market News</button>
         <button className={'nav '+(activeNav==='signals'?'active':'')} onClick={()=>navigate('signals')}><BrainCircuit /> AI Signals</button>
         <button className={'nav '+(activeNav==='crypto'?'active':'')} onClick={()=>navigate('crypto')}><CircleDollarSign /> Crypto (BTC / ETH)</button>
         <button className={'nav '+(activeNav==='portfolio'?'active':'')} onClick={()=>navigate('portfolio')}><Wallet /> Paper Portfolio</button>
@@ -131,12 +133,13 @@ export default function App() {
         <header>
           <div>
             <div className="eyebrow">INDIAN EQUITY MARKETS / INTRADAY</div>
-            <h1>{activeNav === 'market' ? 'Indian Market Dashboard' : activeNav === 'crypto' ? 'Crypto Dashboard' : activeNav === 'signals' ? 'AI Signals' : activeNav === 'portfolio' ? 'Paper Portfolio' : 'Risk Controls'}</h1>
+            <h1>{activeNav === 'market' ? 'Indian Market Dashboard' : activeNav === 'crypto' ? 'Crypto Dashboard' : activeNav === 'news' ? 'NSE / BSE Market News' : activeNav === 'signals' ? 'AI Signals' : activeNav === 'portfolio' ? 'Paper Portfolio' : 'Risk Controls'}</h1>
             <p>Current price cards · Market information · Manual research</p>
           </div>
         </header>
 
         {activeNav === 'market' && <><div className="marketIntro"><div className="eyebrow">NSE / BSE · INDIA</div><h2>Indian market dashboard</h2><p>Stocks and delayed quote cards. No charts unless an AI setup is triggered.</p><div className="marketQuick"><span>NSE · National Stock Exchange</span><span>BSE · Bombay Stock Exchange</span><span>Cash market · Intraday research</span></div><LiveMarketSection /></>}
+        {activeNav === 'news' && <MarketNews />}
         {activeNav === 'signals' && <section className="pagePanel"><div className="eyebrow">KITE INTELLIGENCE</div><h2>AI signals</h2><p>Signals will appear here after verified intraday candle data and technical strategy are connected. No demo BUY/SELL advice is shown.</p><div className="empty">No verified signal available.</div></section>}
         {activeNav === 'crypto' && <CryptoSection />}
         {activeNav === 'portfolio' && <section className="pagePanel"><div className="sectionHead"><div><h2>Paper portfolio</h2><p>Simulated trades only · resets on backend restart</p></div></div><div className="tradeList">{trades.slice(0,5).map(trade=><div className="trade" key={trade.id}><b>{trade.symbol}</b><span>{trade.side} · {trade.quantity} qty</span><span>₹{trade.entry_price.toFixed(2)}</span><em>SIMULATED</em></div>)}{!trades.length&&<div className="empty">No simulated trades yet.</div>}</div></section>}
