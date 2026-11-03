@@ -53,7 +53,7 @@ export default function App() {
   const [qty, setQty] = useState(1);
   const [side, setSide] = useState('BUY');
   const [activeNav, setActiveNav] = useState('market');
-  function navigate(target: string) { setActiveNav(target); document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function navigate(target: string) { setActiveNav(target); }
 
   async function refresh() {
     setBusy(true);
@@ -116,7 +116,7 @@ export default function App() {
           <div className="brandIcon"><CandlestickChart /></div>
           <div><b>KITE AI</b><small>TRADER TERMINAL</small></div>
         </div>
-        <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> Market overview</button>
+        <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> Indian Markets</button>
         <button className={'nav '+(activeNav==='signals'?'active':'')} onClick={()=>navigate('signals')}><BrainCircuit /> AI signals</button>
         <button className={'nav '+(activeNav==='crypto'?'active':'')} onClick={()=>navigate('crypto')}><CircleDollarSign /> Crypto (BTC / ETH)</button>
         <button className={'nav '+(activeNav==='portfolio'?'active':'')} onClick={()=>navigate('portfolio')}><Wallet /> Paper portfolio</button>
@@ -136,27 +136,11 @@ export default function App() {
           </div>
         </header>
 
-        <div id="market"><LiveMarketSection /></div>
-        <div id="signals" className="panel navPlaceholder"><h2>AI signals</h2><p>Real technical BUY/SELL analysis is not active until verified intraday candles are available.</p></div>
-
-        <div id="crypto"><CryptoSection /></div>
-
-        <div id="portfolio"><div className="sectionHead">
-          <div><h2>Recent paper trades</h2><p>In-memory demo ledger resets when backend restarts.</p></div>
-        </div>
-        <div className="tradeList">
-          {trades.slice(0, 5).map((trade) => (
-            <div className="trade" key={trade.id}>
-              <b>{trade.symbol}</b>
-              <span>{trade.side} · {trade.quantity} qty</span>
-              <span>₹{trade.entry_price.toFixed(2)}</span>
-              <em>SIMULATED</em>
-            </div>
-          ))}
-          {!trades.length && <div className="empty">No simulated trades yet.</div>}
-        </div>
-        </div>
-        <div id="risk" className="panel navPlaceholder"><h2>Risk controls</h2><p>Read-only research only. No broker orders are sent by KITE.</p></div>
+        {activeNav === 'market' && <><div className="marketIntro"><div className="eyebrow">NSE / BSE · INDIA</div><h2>Indian market dashboard</h2><p>Stocks and delayed quote cards. No charts unless an AI setup is triggered.</p><div className="marketQuick"><span>NSE · National Stock Exchange</span><span>BSE · Bombay Stock Exchange</span><span>Cash market · Intraday research</span></div><LiveMarketSection /></>}
+        {activeNav === 'signals' && <section className="pagePanel"><div className="eyebrow">KITE INTELLIGENCE</div><h2>AI signals</h2><p>Signals will appear here after verified intraday candle data and technical strategy are connected. No demo BUY/SELL advice is shown.</p><div className="empty">No verified signal available.</div></section>}
+        {activeNav === 'crypto' && <CryptoSection />}
+        {activeNav === 'portfolio' && <section className="pagePanel"><div className="sectionHead"><div><h2>Paper portfolio</h2><p>Simulated trades only · resets on backend restart</p></div></div><div className="tradeList">{trades.slice(0,5).map(trade=><div className="trade" key={trade.id}><b>{trade.symbol}</b><span>{trade.side} · {trade.quantity} qty</span><span>₹{trade.entry_price.toFixed(2)}</span><em>SIMULATED</em></div>)}{!trades.length&&<div className="empty">No simulated trades yet.</div>}</div></section>}
+        {activeNav === 'risk' && <section className="pagePanel"><div className="eyebrow">SAFETY</div><h2>Risk controls</h2><p>KITE is read-only research. No broker orders are sent.</p><ul><li>Use a predefined stop-loss for every trade.</li><li>Limit risk per trade and daily loss.</li><li>Confirm all signals manually; data may be delayed.</li></ul></section>}
         <footer>KITE AI TRADER · MVP 0.2.0 <span>Research software · Not investment advice</span></footer>
       </section>
     </main>
