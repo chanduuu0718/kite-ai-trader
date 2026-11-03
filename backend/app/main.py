@@ -84,6 +84,24 @@ async def live_market():
     except (httpx.HTTPError, ValueError) as exc:
         raise HTTPException(status_code=502, detail="Live quote provider unavailable or returned an unexpected response.") from exc
 
+
+
+@app.get("/api/market/news")
+async def market_news():
+    """Current India equity headlines from Google News RSS (NSE/BSE search)."""
+    feed="https://news.google.com/rss/search?q=(NSE+OR+BSE+OR+Nifty+OR+Sensex)+India+stock+market&hl=en-IN&gl=IN&ceid=IN:en"
+    try:
+        async with httpx.AsyncClient(timeout=15,follow_redirects=True) as client:
+            response=await client.get(feed,headers={"User-Agent":"KITE-AI-Trader/0.3"})
+            response.raise_for_status()
+        root=ET.fromstring(response.text)
+        items=[]
+        for item in root.findall(".//item")[:20]:
+            items.append({"title":item.findtext("title","").strip(),"link":item.findtext("link",""),"published":item.findtext("pubDate",""),"source":item.findtext("source","Google News")})
+        return {"source":"Google News RSS · India equities","fetched_at":datetime.now(timezone.utc),"items":items}
+    except (httpx.HTTPError,ET.ParseError) as exc:
+        raise HTTPException(status_code=502,detail="India market news feed unavailable") from exc
+
 @app.get("/api/market/watchlist")
 def watchlist():
     return WATCHLIST
