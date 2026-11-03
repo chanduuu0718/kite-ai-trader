@@ -53,7 +53,7 @@ export default function App() {
   const [qty, setQty] = useState(1);
   const [side, setSide] = useState('BUY');
   const [activeNav, setActiveNav] = useState('market');
-  function navigate(target: string) { setActiveNav(target); }
+  function navigate(target: string) { setActiveNav(target); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
   async function refresh() {
     setBusy(true);
@@ -116,11 +116,11 @@ export default function App() {
           <div className="brandIcon"><CandlestickChart /></div>
           <div><b>KITE AI</b><small>TRADER TERMINAL</small></div>
         </div>
-        <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> Indian Markets</button>
-        <button className={'nav '+(activeNav==='signals'?'active':'')} onClick={()=>navigate('signals')}><BrainCircuit /> AI signals</button>
+        <button className={'nav '+(activeNav==='market'?'active':'')} onClick={()=>navigate('market')}><Activity /> India Market</button>
+        <button className={'nav '+(activeNav==='signals'?'active':'')} onClick={()=>navigate('signals')}><BrainCircuit /> AI Signals</button>
         <button className={'nav '+(activeNav==='crypto'?'active':'')} onClick={()=>navigate('crypto')}><CircleDollarSign /> Crypto (BTC / ETH)</button>
-        <button className={'nav '+(activeNav==='portfolio'?'active':'')} onClick={()=>navigate('portfolio')}><Wallet /> Paper portfolio</button>
-        <button className={'nav '+(activeNav==='risk'?'active':'')} onClick={()=>navigate('risk')}><ShieldCheck /> Risk controls</button>
+        <button className={'nav '+(activeNav==='portfolio'?'active':'')} onClick={()=>navigate('portfolio')}><Wallet /> Paper Portfolio</button>
+        <button className={'nav '+(activeNav==='risk'?'active':'')} onClick={()=>navigate('risk')}><ShieldCheck /> Risk Controls</button>
         <div className="sideNote">
           <span className="pulse" /> READ-ONLY RESEARCH
           <small>Delayed chart data · Manual trading only</small>
@@ -131,8 +131,8 @@ export default function App() {
         <header>
           <div>
             <div className="eyebrow">INDIAN EQUITY MARKETS / INTRADAY</div>
-            <h1>Market overview</h1>
-            <p>Independent charts and explainable market research</p>
+            <h1>{activeNav === 'market' ? 'Indian Market Dashboard' : activeNav === 'crypto' ? 'Crypto Dashboard' : activeNav === 'signals' ? 'AI Signals' : activeNav === 'portfolio' ? 'Paper Portfolio' : 'Risk Controls'}</h1>
+            <p>Current price cards · Market information · Manual research</p>
           </div>
         </header>
 
