@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+import asyncio\nfrom datetime import datetime, timezone
 import xml.etree.ElementTree as ET
 
 import httpx
@@ -88,19 +88,40 @@ async def live_market():
 
 @app.get("/api/market/news")
 async def market_news():
-    """Current India equity headlines from Google News RSS (NSE/BSE search)."""
-    feed="https://news.google.com/rss/search?q=(NSE+OR+BSE+OR+Nifty+OR+Sensex)+India+stock+market&hl=en-IN&gl=IN&ceid=IN:en"
-    try:
-        async with httpx.AsyncClient(timeout=15,follow_redirects=True) as client:
-            response=await client.get(feed,headers={"User-Agent":"KITE-AI-Trader/0.3"})
+    """Aggregated current Indian equity headlines from multiple Google News RSS searches."""
+    feeds = [
+        ("NSE BSE stock market India", "https://news.google.com/rss/search?q=NSE+OR+BSE+India+stock+market&hl=en-IN&gl=IN&ceid=IN:en"),
+        ("Nifty Sensex market", "https://news.google.com/rss/search?q=Nifty+OR+Sensex+market+India&hl=en-IN&gl=IN&ceid=IN:en"),
+        ("Indian stocks earnings corporate", "https://news.google.com/rss/search?q=India+stocks+earnings+results+corporate+market&hl=en-IN&gl=IN&ceid=IN:en"),
+        ("Indian market sectors", "https://news.google.com/rss/search?q=India+stocks+banking+IT+auto+pharma+market&hl=en-IN&gl=IN&ceid=IN:en"),
+    ]
+    async def fetch_feed(client, label, url):
+        try:
+            response = await client.get(url, headers={"User-Agent":"KITE-AI-Trader/0.4"})
             response.raise_for_status()
-        root=ET.fromstring(response.text)
-        items=[]
-        for item in root.findall(".//item")[:20]:
-            items.append({"title":item.findtext("title","").strip(),"link":item.findtext("link",""),"published":item.findtext("pubDate",""),"source":item.findtext("source","Google News")})
-        return {"source":"Google News RSS · India equities","fetched_at":datetime.now(timezone.utc),"items":items}
-    except (httpx.HTTPError,ET.ParseError) as exc:
-        raise HTTPException(status_code=502,detail="India market news feed unavailable") from exc
+            root = ET.fromstring(response.text)
+            entries = []
+            for item in root.findall(".//item")[:15]:
+                title = item.findtext("title", "").strip()
+                link = item.findtext("link", "").strip()
+                if title and link:
+                    source_node = item.find("source")
+                    entries.append({"title":title,"link":link,"published":item.findtext("pubDate","").strip(),"source":source_node.text.strip() if source_node is not None and source_node.text else label})
+            return entries
+        except (httpx.HTTPError, ET.ParseError):
+            return []
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            batches = await asyncio.gather(*(fetch_feed(client, label, url) for label,url in feeds))
+        unique = {}
+        for batch in batches:
+            for item in batch:
+                unique.setdefault(item["link"], item)
+        items = list(unique.values())
+        items.sort(key=lambda item: item["published"], reverse=True)
+        return {"source":"Google News RSS · India equities multi-topic", "fetched_at":datetime.now(timezone.utc), "items":items[:50]}
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="India market news feed unavailable") from exc
 
 @app.get("/api/market/watchlist")
 def watchlist():
@@ -132,24 +153,38 @@ async def crypto_market():
 
 @app.get("/api/crypto/news")
 async def crypto_news():
-    """Latest CoinDesk RSS headlines for the crypto research panel."""
-    feed_url = "https://www.coindesk.com/arc/outboundfeeds/rss/"
-    try:
-        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
-            response = await client.get(feed_url, headers={"User-Agent": "KITE-AI-Trader/0.1"})
+    """Aggregated crypto headlines from CoinDesk and Google News RSS."""
+    feeds = [
+        ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
+        ("Cointelegraph", "https://cointelegraph.com/rss"),
+        ("Crypto markets BTC ETH India", "https://news.google.com/rss/search?q=Bitcoin+OR+Ethereum+crypto+market+India&hl=en-IN&gl=IN&ceid=IN:en"),
+    ]
+    async def fetch_feed(client, label, url):
+        try:
+            response = await client.get(url, headers={"User-Agent":"KITE-AI-Trader/0.4"})
             response.raise_for_status()
-        root = ET.fromstring(response.text)
-        items = []
-        for item in root.findall(".//item")[:12]:
-            title = item.findtext("title", default="").strip()
-            link = item.findtext("link", default="").strip()
-            published = item.findtext("pubDate", default="").strip()
-            if title and link:
-                items.append({"title": title, "link": link, "published": published, "source": "CoinDesk"})
-        return items
-    except (httpx.HTTPError, ET.ParseError) as exc:
-        raise HTTPException(status_code=502, detail="Crypto news feed is temporarily unavailable.") from exc
-
+            root = ET.fromstring(response.text)
+            entries=[]
+            for item in root.findall(".//item")[:20]:
+                title=item.findtext("title","").strip()
+                link=item.findtext("link","").strip()
+                if title and link:
+                    source_node=item.find("source")
+                    entries.append({"title":title,"link":link,"published":item.findtext("pubDate","").strip(),"source":source_node.text.strip() if source_node is not None and source_node.text else label})
+            return entries
+        except (httpx.HTTPError, ET.ParseError):
+            return []
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        batches=await asyncio.gather(*(fetch_feed(client,label,url) for label,url in feeds))
+    unique={}
+    for batch in batches:
+        for item in batch:
+            unique.setdefault(item["link"],item)
+    items=list(unique.values())
+    items.sort(key=lambda item:item["published"],reverse=True)
+    if not items:
+        raise HTTPException(status_code=502,detail="Crypto news feeds are temporarily unavailable.")
+    return items[:50]
 
 @app.get("/api/market/{symbol}/history")
 async def historical_chart(
