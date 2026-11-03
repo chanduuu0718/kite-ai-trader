@@ -138,7 +138,7 @@ export default function App() {
           </div>
         </header>
 
-        {activeNav === 'market' && <><div className="marketIntro"><div className="eyebrow">NSE / BSE · INDIA</div><h2>Indian market dashboard</h2><p>Stocks and delayed quote cards. No charts unless an AI setup is triggered.</p><div className="marketQuick"><span>NSE · National Stock Exchange</span><span>BSE · Bombay Stock Exchange</span><span>Cash market · Intraday research</span></div><LiveMarketSection /></>}
+        {activeNav === 'market' && <div><div className="marketIntro"><div className="eyebrow">NSE / BSE · INDIA</div><h2>Indian market dashboard</h2><p>Stocks and delayed quote cards. No charts unless an AI setup is triggered.</p><div className="marketQuick"><span>NSE · National Stock Exchange</span><span>BSE · Bombay Stock Exchange</span><span>Cash market · Intraday research</span></div><LiveMarketSection /></div>}
         {activeNav === 'news' && <MarketNews />}
         {activeNav === 'signals' && <section className="pagePanel"><div className="eyebrow">KITE INTELLIGENCE</div><h2>AI signals</h2><p>Signals will appear here after verified intraday candle data and technical strategy are connected. No demo BUY/SELL advice is shown.</p><div className="empty">No verified signal available.</div></section>}
         {activeNav === 'crypto' && <CryptoSection />}
